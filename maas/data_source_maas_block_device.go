@@ -138,6 +138,11 @@ func dataSourceBlockDeviceRead(ctx context.Context, d *schema.ResourceData, meta
 	if err != nil {
 		return diag.FromErr(err)
 	}
+	if blockDevice == nil {
+		// Block device referenced in schema is gone - need to re-read
+		d.SetId("")
+		return nil
+	}
 	tfState := map[string]interface{}{
 		"id":             fmt.Sprintf("%v", blockDevice.ID),
 		"partitions":     getBlockDevicePartitionsTFState(blockDevice),
