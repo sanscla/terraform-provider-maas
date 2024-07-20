@@ -122,6 +122,16 @@ func resourceNetworkInterfaceVlanRead(ctx context.Context, d *schema.ResourceDat
 		return diag.FromErr(err)
 	}
 
+	parentID, err := findInterfaceParent(client, machine.SystemID, d.Get("parent").(string))
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	parentNetworkInterface, err := client.NetworkInterface.Get(machine.SystemID, parentID)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	p := networkInterface.Params.(map[string]interface{})
 	if _, ok := p["accept-ra"]; ok {
 		d.Set("accept_ra", p["accept-ra"].(bool))
@@ -131,7 +141,7 @@ func resourceNetworkInterfaceVlanRead(ctx context.Context, d *schema.ResourceDat
 
 	tfState := map[string]interface{}{
 		"mtu":    networkInterface.EffectiveMTU,
-		"parent": networkInterface.Parents[0],
+		"parent": parentNetworkInterface.Name,
 		"tags":   networkInterface.Tags,
 		"vlan":   networkInterface.VLAN.ID,
 	}
